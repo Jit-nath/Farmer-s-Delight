@@ -113,5 +113,5 @@ backend/src/model/.qdrant_fs_check
 backend/src/model/raft_state.json
 backend/src/model/aliases
 backend/src/model/data.xlsx
-*.mp4
+
 
