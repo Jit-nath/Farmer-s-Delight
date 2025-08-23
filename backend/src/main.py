@@ -3,9 +3,8 @@ from flask import Flask
 from marketplace.route import products_bp
 from home.route import home_bp
 from chat.route import chat_bp, socketio
-from user.route import user_bp
-from videos.route import videos_bp
 from users.route import user_bp
+from videos.route import videos_bp
 
 
 # Helper to get LAN IP
@@ -35,17 +34,9 @@ app.register_blueprint(home_bp, url_prefix="/")
 socketio.init_app(
     app,
     cors_allowed_origins="*",
-    logger=True,
-    engineio_logger=True,
-    async_mode="threading",
-    ping_timeout=60,
-    ping_interval=25,
     transports=["polling", "websocket"],  # type: ignore
-    allow_upgrades=True,
-    cookie=False,
 )
 
 if __name__ == "__main__":
     print(f"Starting server at http://{localIP}:{port}")
-    socketio.run(app, host="0.0.0.0", port=port, debug=True, allow_unsafe_werkzeug=True)
-    socketio.run(app, host="0.0.0.0", port=port, allow_unsafe_werkzeug=True)
+    socketio.run(app, host="0.0.0.0", port=port, debug=False)
