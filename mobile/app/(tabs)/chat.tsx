@@ -25,16 +25,28 @@ interface Message {
   isLoading?: boolean;
 }
 
+interface ChatResponse {
+  answer: string | { context: string };
+  response?: string;
+}
+
+interface SocketError {
+  message: string;
+  type: string;
+  description?: string;
+}
+
 const API_BASE = process.env.EXPO_PUBLIC_BASE_URL;
 
-// Socket connection
-let socket: Socket | null = null;
+// Custom hook for socket management
+const useSocket = () => {
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-// Connect to Flask-SocketIO server
-const initializeSocket = () => {
-  if (!socket) {
-    socket = io(`${API_BASE}/chat`, {
-      transports: ["polling", "websocket"], // Fallback to polling if websocket fails
+  useEffect(() => {
+    const socketInstance = io(`${API_BASE}/chat`, {
+      transports: ["polling", "websocket"],
       upgrade: false,
       rememberUpgrade: false,
       forceNew: true,
@@ -45,33 +57,49 @@ const initializeSocket = () => {
       reconnectionDelay: 2000,
     });
 
-    socket.on("connect", () => {
+    socketInstance.on("connect", () => {
       console.log("✅ Connected to Flask-SocketIO /chat namespace");
+      setIsConnected(true);
+      setError(null);
     });
 
-    socket.on("disconnect", (reason) => {
+    socketInstance.on("disconnect", (reason) => {
       console.log("❌ Disconnected from Flask-SocketIO:", reason);
+      setIsConnected(false);
     });
 
-    socket.on("connect_error", (err: any) => {
-      // console.error("⚠️ Socket.IO connection error:", err);
-
+    socketInstance.on("connect_error", (err) => {
       console.error("⚠️ Connection failed:", {
         message: err.message,
-        type: err.type,
-        description: err.description,
+        type: (err as any)?.type,
+        description: (err as any)?.description,
       });
+      setError(err);
+      setIsConnected(false);
     });
 
-    socket.on("connection_response", (data) => {
+    socketInstance.on("connection_response", (data) => {
       console.log("Connection response:", data);
     });
-  }
-  return socket;
+
+    setSocket(socketInstance);
+
+    return () => {
+      socketInstance.disconnect();
+      socketInstance.removeAllListeners();
+    };
+  }, []);
+
+  return { socket, isConnected, error };
 };
 
 // Message Component
-const MessageBubble = ({ message }: { message: Message }) => {
+type MessageBubbleProps = {
+  message: Message;
+  key?: string;
+};
+
+const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   return (
     <View className={`mb-4 ${message.isUser ? "items-end" : "items-start"}`}>
       <View
@@ -128,14 +156,11 @@ export default function Chat() {
 
   // API Service
   const sendMessageToFlask = useCallback(
-    async (
-      message: string
-      // sessionId?: string
-    ): Promise<any> => {
-      return new Promise((resolve, reject) => {
-        const socketInstance = initializeSocket();
+    async (message: string): Promise<ChatResponse> => {
+      const { socket, isConnected } = useSocket();
 
-        if (!socketInstance.connected) {
+      return new Promise((resolve, reject) => {
+        if (!socket || !isConnected) {
           reject(new Error("Socket.IO not connected"));
           return;
         }
@@ -143,31 +168,30 @@ export default function Chat() {
         // Set up one-time listener for response
         const responseHandler = (data: string) => {
           try {
-            const response = typeof data === "string" ? JSON.parse(data) : data;
+            const response: ChatResponse = typeof data === "string" ? JSON.parse(data) : data;
             resolve(response);
           } catch (err) {
             reject(err);
           } finally {
-            socketInstance.off("message", responseHandler);
+            socket.off("message", responseHandler);
           }
         };
 
         // Listen for response
-        socketInstance.on("message", responseHandler);
+        socket.on("message", responseHandler);
 
         // Set timeout
         const timeout = setTimeout(() => {
-          socketInstance.off("message", responseHandler);
+          socket.off("message", responseHandler);
           reject(new Error("Request timeout"));
         }, 30000); // 30 seconds timeout
 
         // Clear timeout when response is received
-        socketInstance.on("message", () => clearTimeout(timeout));
+        socket.on("message", () => clearTimeout(timeout));
 
         // Send data to backend
-        socketInstance.emit("message", {
-          userID: user?.user_id || "unknown", // Replace with actual user ID
-          // sessionId: sessionId || "new_session",
+        socket.emit("message", {
+          userID: user?.user_id || "unknown",
           context: message,
         });
       });
@@ -177,28 +201,31 @@ export default function Chat() {
 
   // Initialize chat with welcome message
   useEffect(() => {
-    const socketInstance = initializeSocket();
+    const { socket } = useSocket();
 
-    // Update connection status
-    socketInstance.on("connect", () => setConnectionStatus("connected"));
-    socketInstance.on("disconnect", () => setConnectionStatus("disconnected"));
-    socketInstance.on("connect_error", () => setConnectionStatus("error"));
+    // Update connection status based on socket state
+    if (socket) {
+      socket.on("connect", () => setConnectionStatus("connected"));
+      socket.on("disconnect", () => setConnectionStatus("disconnected"));
+      socket.on("connect_error", () => setConnectionStatus("error"));
 
-    const welcomeMessage: Message = {
-      id: "welcome",
-      text: `Hello ${
-        user?.name || user?.user_id
-      }! I'm your AI Farming Assistant 🌾\n\nI can help you with:\n• Crop care and cultivation\n• Pest and disease control\n• Soil management and testing\n• Fertilizers and nutrients\n• Weather and irrigation guidance\n• Market insights and pricing\n\nWhat farming question can I help you with today?`,
-      isUser: false,
-      timestamp: new Date(),
-    };
-    setMessages([welcomeMessage]);
-    // setSessionId(`session_${Date.now()}`);
-    // Cleanup on unmount
-    return () => {
-      socketInstance.disconnect();
-      socket = null;
-    };
+      const welcomeMessage: Message = {
+        id: "welcome",
+        text: `Hello ${
+          user?.name || user?.user_id
+        }! I'm your AI Farming Assistant 🌾\n\nI can help you with:\n• Crop care and cultivation\n• Pest and disease control\n• Soil management and testing\n• Fertilizers and nutrients\n• Weather and irrigation guidance\n• Market insights and pricing\n\nWhat farming question can I help you with today?`,
+        isUser: false,
+        timestamp: new Date(),
+      };
+      setMessages([welcomeMessage]);
+
+      // Cleanup listeners on unmount
+      return () => {
+        socket.off("connect");
+        socket.off("disconnect");
+        socket.off("connect_error");
+      };
+    }
   }, [user]);
 
   // Send message mutation
@@ -325,10 +352,12 @@ export default function Chat() {
 
         {/* Messages */}
         <ScrollView
-          ref={scrollViewRef}
           className="flex-1 px-4 py-4"
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          onContentSizeChange={() => {
+            scrollViewRef.current?.scrollToEnd({ animated: true });
+          }}
         >
           {messages.map((message) => (
             <MessageBubble key={message.id} message={message} />
