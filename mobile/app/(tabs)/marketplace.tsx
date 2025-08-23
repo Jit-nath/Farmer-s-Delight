@@ -7,19 +7,19 @@ const products = [
     id: "1",
     name: "Fresh Tomatoes",
     price: 2.5,
-    image: require("../../assets/images/partial-react-logo.png"),
+    // image: require("../../assets/images/partial-react-logo.png"),
   },
   {
     id: "2",
     name: "Organic Potatoes",
     price: 1.8,
-    image: require("../../assets/images/partial-react-logo.png"),
+    // image: require("../../assets/images/partial-react-logo.png"),
   },
   {
     id: "3",
     name: "Farm Eggs (12pcs)",
     price: 3.0,
-    image: require("../../assets/images/partial-react-logo.png"),
+    // image: require("../../assets/images/partial-react-logo.png"),
   },
 ];
 
@@ -39,11 +39,11 @@ const Marketplace = () => {
         elevation: 2,
       }}
     >
-      <Image
+      {/* <Image
         source={item.image}
         style={{ width: 64, height: 64, borderRadius: 8, marginRight: 16 }}
         resizeMode="cover"
-      />
+      /> */}
       <View style={{ flex: 1 }}>
         <Text style={{ fontSize: 18, fontWeight: "bold" }}>{item.name}</Text>
         <Text style={{ fontSize: 16, color: "#4CAF50", marginVertical: 4 }}>
