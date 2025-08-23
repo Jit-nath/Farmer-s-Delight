@@ -5,6 +5,8 @@ from home.route import home_bp
 from chat.route import chat_bp, socketio
 from user.route import user_bp
 from videos.route import videos_bp
+from users.route import user_bp
+
 
 # Helper to get LAN IP
 def get_local_ip():
@@ -18,6 +20,7 @@ def get_local_ip():
     finally:
         s.close()
     return ip
+
 
 localIP = get_local_ip()
 port = 5000
@@ -37,7 +40,7 @@ socketio.init_app(
     async_mode="threading",
     ping_timeout=60,
     ping_interval=25,
-    transports=["polling", "websocket"],
+    transports=["polling", "websocket"],  # type: ignore
     allow_upgrades=True,
     cookie=False,
 )
@@ -45,3 +48,4 @@ socketio.init_app(
 if __name__ == "__main__":
     print(f"Starting server at http://{localIP}:{port}")
     socketio.run(app, host="0.0.0.0", port=port, debug=True, allow_unsafe_werkzeug=True)
+    socketio.run(app, host="0.0.0.0", port=port, allow_unsafe_werkzeug=True)
