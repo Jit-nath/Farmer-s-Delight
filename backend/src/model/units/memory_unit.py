@@ -17,10 +17,13 @@ chat = hf_runnable
 retriever = vector_store.as_retriever(search_kwargs={"k": 3})
 
 store = {}
+
+
 def get_session_history(session_id: str):
     if session_id not in store:
         store[session_id] = ChatMessageHistory()
     return store[session_id]
+
 
 # ---- 2) Prompts ----
 CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(
@@ -31,13 +34,17 @@ RAG_PROMPT = PromptTemplate.from_template(
     "You are a helpful assistant. Use the following context to answer.\n\nContext:\n{context}\n\nQuestion: {question}"
 )
 
+
 def format_docs(docs):
     return "\n\n".join([d.page_content for d in docs])
 
+
 # ---- 3) Chains ----
 condense = (
-    {"history": RunnableLambda(lambda x: x["history"]),
-     "input": RunnableLambda(lambda x: x["input"])}
+    {
+        "history": RunnableLambda(lambda x: x["history"]),
+        "input": RunnableLambda(lambda x: x["input"]),
+    }
     | CONDENSE_QUESTION_PROMPT
     | chat
     | StrOutputParser()
@@ -65,12 +72,16 @@ chain = (
         history=RunnableLambda(lambda x: x.get("history", "")),
         input=RunnablePassthrough(),
     )
-    | RunnableParallel(context=retrieve, input=RunnableLambda(lambda x: x["input"]))
+    | RunnableParallel(
+        context=retrieve,
+        input=RunnableLambda(lambda x: x["input"]),
+        history=RunnableLambda(lambda x: x["history"]),  # <-- keep history alive
+    )
     | RunnableLambda(
         lambda x: {
-            "history": x["history"], # type: ignore
-            "context": x["context"], # type: ignore
-            "input": x["input"], # type: ignore
+            "history": x["history"],
+            "context": x["context"],
+            "input": x["input"],
         }
     )
     | rag

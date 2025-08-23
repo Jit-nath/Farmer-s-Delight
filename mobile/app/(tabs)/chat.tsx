@@ -25,28 +25,16 @@ interface Message {
   isLoading?: boolean;
 }
 
-interface ChatResponse {
-  answer: string | { context: string };
-  response?: string;
-}
-
-interface SocketError {
-  message: string;
-  type: string;
-  description?: string;
-}
-
 const API_BASE = process.env.EXPO_PUBLIC_BASE_URL;
 
-// Custom hook for socket management
-const useSocket = () => {
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+// Socket connection
+let socket: Socket | null = null;
 
-  useEffect(() => {
-    const socketInstance = io(`${API_BASE}/chat`, {
-      transports: ["polling", "websocket"],
+// Connect to Flask-SocketIO server
+const initializeSocket = () => {
+  if (!socket) {
+    socket = io(`${API_BASE}/chat`, {
+      transports: ["polling", "websocket"], // Fallback to polling if websocket fails
       upgrade: false,
       rememberUpgrade: false,
       forceNew: true,
@@ -57,57 +45,40 @@ const useSocket = () => {
       reconnectionDelay: 2000,
     });
 
-    socketInstance.on("connect", () => {
+    socket.on("connect", () => {
       console.log("✅ Connected to Flask-SocketIO /chat namespace");
-      setIsConnected(true);
-      setError(null);
     });
 
-    socketInstance.on("disconnect", (reason) => {
+    socket.on("disconnect", (reason) => {
       console.log("❌ Disconnected from Flask-SocketIO:", reason);
-      setIsConnected(false);
     });
 
-    socketInstance.on("connect_error", (err) => {
+    socket.on("connect_error", (err: any) => {
+      // console.error("⚠️ Socket.IO connection error:", err);
+
       console.error("⚠️ Connection failed:", {
         message: err.message,
-        type: (err as any)?.type,
-        description: (err as any)?.description,
+        type: err.type,
+        description: err.description,
       });
-      setError(err);
-      setIsConnected(false);
     });
 
-    socketInstance.on("connection_response", (data) => {
+    socket.on("connection_response", (data) => {
       console.log("Connection response:", data);
     });
-
-    setSocket(socketInstance);
-
-    return () => {
-      socketInstance.disconnect();
-      socketInstance.removeAllListeners();
-    };
-  }, []);
-
-  return { socket, isConnected, error };
+  }
+  return socket;
 };
 
 // Message Component
-type MessageBubbleProps = {
-  message: Message;
-  key?: string;
-};
-
-const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
+const MessageBubble = ({ message }: { message: Message }) => {
   return (
     <View className={`mb-4 ${message.isUser ? "items-end" : "items-start"}`}>
       <View
-        className={`max-w-[80%] px-4 py-3 rounded-2xl ${
-          message.isUser
+        className={`max-w-[80%] px-4 py-3 rounded-2xl ${message.isUser
             ? "bg-green-500 rounded-br-md"
             : "bg-gray-100 rounded-bl-md"
-        }`}
+          }`}
       >
         {message.isLoading ? (
           <View className="flex-row items-center">
@@ -116,9 +87,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
           </View>
         ) : (
           <Text
-            className={`text-base leading-6 ${
-              message.isUser ? "text-white" : "text-gray-800"
-            }`}
+            className={`text-base leading-6 ${message.isUser ? "text-white" : "text-gray-800"
+              }`}
           >
             {message.text}
           </Text>
@@ -156,11 +126,14 @@ export default function Chat() {
 
   // API Service
   const sendMessageToFlask = useCallback(
-    async (message: string): Promise<ChatResponse> => {
-      const { socket, isConnected } = useSocket();
-
+    async (
+      message: string
+      // sessionId?: string
+    ): Promise<any> => {
       return new Promise((resolve, reject) => {
-        if (!socket || !isConnected) {
+        const socketInstance = initializeSocket();
+
+        if (!socketInstance.connected) {
           reject(new Error("Socket.IO not connected"));
           return;
         }
@@ -168,30 +141,31 @@ export default function Chat() {
         // Set up one-time listener for response
         const responseHandler = (data: string) => {
           try {
-            const response: ChatResponse = typeof data === "string" ? JSON.parse(data) : data;
+            const response = typeof data === "string" ? JSON.parse(data) : data;
             resolve(response);
           } catch (err) {
             reject(err);
           } finally {
-            socket.off("message", responseHandler);
+            socketInstance.off("message", responseHandler);
           }
         };
 
         // Listen for response
-        socket.on("message", responseHandler);
+        socketInstance.on("message", responseHandler);
 
         // Set timeout
         const timeout = setTimeout(() => {
-          socket.off("message", responseHandler);
+          socketInstance.off("message", responseHandler);
           reject(new Error("Request timeout"));
         }, 30000); // 30 seconds timeout
 
         // Clear timeout when response is received
-        socket.on("message", () => clearTimeout(timeout));
+        socketInstance.on("message", () => clearTimeout(timeout));
 
         // Send data to backend
-        socket.emit("message", {
-          userID: user?.user_id || "unknown",
+        socketInstance.emit("message", {
+          userID: user?.user_id || "unknown", // Replace with actual user ID
+          // sessionId: sessionId || "new_session",
           context: message,
         });
       });
@@ -201,31 +175,27 @@ export default function Chat() {
 
   // Initialize chat with welcome message
   useEffect(() => {
-    const { socket } = useSocket();
+    const socketInstance = initializeSocket();
 
-    // Update connection status based on socket state
-    if (socket) {
-      socket.on("connect", () => setConnectionStatus("connected"));
-      socket.on("disconnect", () => setConnectionStatus("disconnected"));
-      socket.on("connect_error", () => setConnectionStatus("error"));
+    // Update connection status
+    socketInstance.on("connect", () => setConnectionStatus("connected"));
+    socketInstance.on("disconnect", () => setConnectionStatus("disconnected"));
+    socketInstance.on("connect_error", () => setConnectionStatus("error"));
 
-      const welcomeMessage: Message = {
-        id: "welcome",
-        text: `Hello ${
-          user?.name || user?.user_id
+    const welcomeMessage: Message = {
+      id: "welcome",
+      text: `Hello ${user?.name || user?.user_id
         }! I'm your AI Farming Assistant 🌾\n\nI can help you with:\n• Crop care and cultivation\n• Pest and disease control\n• Soil management and testing\n• Fertilizers and nutrients\n• Weather and irrigation guidance\n• Market insights and pricing\n\nWhat farming question can I help you with today?`,
-        isUser: false,
-        timestamp: new Date(),
-      };
-      setMessages([welcomeMessage]);
-
-      // Cleanup listeners on unmount
-      return () => {
-        socket.off("connect");
-        socket.off("disconnect");
-        socket.off("connect_error");
-      };
-    }
+      isUser: false,
+      timestamp: new Date(),
+    };
+    setMessages([welcomeMessage]);
+    // setSessionId(`session_${Date.now()}`);
+    // Cleanup on unmount
+    return () => {
+      socketInstance.disconnect();
+      socket = null;
+    };
   }, [user]);
 
   // Send message mutation
@@ -233,10 +203,10 @@ export default function Chat() {
     mutationFn: ({
       message,
     }: // sessionId,
-    {
-      message: string;
-      // sessionId: string;
-    }) => sendMessageToFlask(message /*,sessionId*/),
+      {
+        message: string;
+        // sessionId: string;
+      }) => sendMessageToFlask(message /*,sessionId*/),
     onSuccess: (response) => {
       setMessages((prev) => {
         const withoutLoading = prev.filter((msg) => !msg.isLoading);
@@ -248,8 +218,8 @@ export default function Chat() {
               typeof response.answer === "object"
                 ? response.answer.context
                 : response.answer ||
-                  response.response ||
-                  "I apologize, but I had trouble understanding that. Could you please rephrase your question?",
+                response.response ||
+                "I apologize, but I had trouble understanding that. Could you please rephrase your question?",
             isUser: false,
             timestamp: new Date(),
           },
@@ -328,13 +298,12 @@ export default function Chat() {
         <View className="bg-green-500 px-4 py-4 border-b border-green-600">
           <View className="flex-row items-center justify-center">
             <View
-              className={`w-3 h-3 rounded-full mr-2 ${
-                connectionStatus === "connected"
+              className={`w-3 h-3 rounded-full mr-2 ${connectionStatus === "connected"
                   ? "bg-green-300"
                   : connectionStatus === "connecting"
-                  ? "bg-yellow-300"
-                  : "bg-red-300"
-              }`}
+                    ? "bg-yellow-300"
+                    : "bg-red-300"
+                }`}
             />
             <Text className="text-white text-lg font-bold">
               🤖 AI Farming Assistant
@@ -352,12 +321,10 @@ export default function Chat() {
 
         {/* Messages */}
         <ScrollView
+          ref={scrollViewRef}
           className="flex-1 px-4 py-4"
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          onContentSizeChange={() => {
-            scrollViewRef.current?.scrollToEnd({ animated: true });
-          }}
         >
           {messages.map((message) => (
             <MessageBubble key={message.id} message={message} />
@@ -387,11 +354,10 @@ export default function Chat() {
                 disabled={
                   inputText.trim().length === 0 || sendMessageMutation.isPending
                 }
-                className={`w-12 h-12 rounded-full items-center justify-center ${
-                  inputText.trim().length > 0 && !sendMessageMutation.isPending
+                className={`w-12 h-12 rounded-full items-center justify-center ${inputText.trim().length > 0 && !sendMessageMutation.isPending
                     ? "bg-green-500"
                     : "bg-gray-300"
-                }`}
+                  }`}
               >
                 {sendMessageMutation.isPending ? (
                   <ActivityIndicator size="small" color="white" />
