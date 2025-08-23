@@ -4,6 +4,9 @@ from langchain_core.runnables import Runnable
 from huggingface_hub import InferenceClient
 from langchain_core.runnables import Runnable, RunnableConfig
 from typing import Any
+from dotenv import load_dotenv
+
+load_dotenv()
 
 MODEL_NAME: Optional[str] = os.getenv("CHAT_MODEL")
 HF_TOKEN: Optional[str] = os.getenv("HF_TOKEN")
