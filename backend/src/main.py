@@ -39,4 +39,4 @@ socketio.init_app(
 
 if __name__ == "__main__":
     print(f"Starting server at http://{localIP}:{port}")
-    socketio.run(app, host="0.0.0.0", port=port, debug=True, allow_unsafe_werkzeug=True)
+    socketio.run(app, host="0.0.0.0", port=port,debug=True)

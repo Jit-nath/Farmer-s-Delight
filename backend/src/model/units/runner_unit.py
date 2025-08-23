@@ -1,12 +1,8 @@
 import os
-from typing import Optional
-from langchain_core.runnables import Runnable
-from huggingface_hub import InferenceClient
+from typing import Optional, Any
 from langchain_core.runnables import Runnable, RunnableConfig
-from typing import Any
-from dotenv import load_dotenv
-
-load_dotenv()
+from langchain_core.prompt_values import StringPromptValue
+from huggingface_hub import InferenceClient
 
 MODEL_NAME: Optional[str] = os.getenv("CHAT_MODEL")
 HF_TOKEN: Optional[str] = os.getenv("HF_TOKEN")
@@ -19,19 +15,27 @@ if not HF_TOKEN:
 client = InferenceClient(model=MODEL_NAME, token=HF_TOKEN)
 
 
-class HuggingFaceRunnable(Runnable[str, str]):
+class HuggingFaceRunnable(Runnable):
     def __init__(self, client: InferenceClient):
         self.client = client
 
     def invoke(
         self,
-        input: str,
+        input: Any,
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> str:
+        # --- Normalize LangChain inputs ---
+        if isinstance(input, StringPromptValue):
+            input = input.to_string()
+
+        if not isinstance(input, str):
+            raise TypeError(f"Expected str, got {type(input)}")
+
         if not input.strip():
             raise ValueError("Prompt text cannot be empty")
 
+        # Call Hugging Face API
         response = self.client.chat_completion(
             messages=[{"role": "user", "content": input}],
             max_tokens=1024,
