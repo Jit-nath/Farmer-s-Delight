@@ -4,6 +4,7 @@ from marketplace.route import products_bp
 from home.route import home_bp
 from chat.route import chat_bp, socketio
 from users.route import user_bp
+from videos.route import videos_bp
 
 
 # Helper to get LAN IP
