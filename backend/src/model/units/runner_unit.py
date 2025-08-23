@@ -3,6 +3,9 @@ from typing import Optional, Any
 from langchain_core.runnables import Runnable, RunnableConfig
 from langchain_core.prompt_values import StringPromptValue
 from huggingface_hub import InferenceClient
+from dotenv import load_dotenv
+
+load_dotenv()
 
 MODEL_NAME: Optional[str] = os.getenv("CHAT_MODEL")
 HF_TOKEN: Optional[str] = os.getenv("HF_TOKEN")
