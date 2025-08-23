@@ -27,6 +27,7 @@ app = Flask(__name__)
 app.register_blueprint(products_bp, url_prefix="/products")
 app.register_blueprint(chat_bp, url_prefix="/chat")
 app.register_blueprint(user_bp, url_prefix="/user")
+app.register_blueprint(videos_bp, url_prefix="/videos")
 app.register_blueprint(home_bp, url_prefix="/")
 
 socketio.init_app(
