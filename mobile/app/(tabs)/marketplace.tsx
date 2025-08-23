@@ -34,7 +34,7 @@ const Marketplace = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch("http://10.50.61.220:5000/products");
+      const response = await fetch(`${process.env.EXPO_PUBLIC_BASE_URL}/products`);
       const data = await response.json();
       setProducts(data);
       setFilteredProducts(data);
