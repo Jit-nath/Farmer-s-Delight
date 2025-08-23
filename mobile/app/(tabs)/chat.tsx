@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useMutation } from "@tanstack/react-query";
 import { useUser } from "@/context/UserContext";
 import { useRouter } from "expo-router";
+import MessageBubble from "@/components/MessageBubble";
 
 // Types
 interface Message {
@@ -70,39 +71,6 @@ const initializeSocket = () => {
   return socket;
 };
 
-// Message Component
-const MessageBubble = ({ message }: { message: Message }) => {
-  return (
-    <View className={`mb-4 ${message.isUser ? "items-end" : "items-start"}`}>
-      <View
-        className={`max-w-[80%] px-4 py-3 rounded-2xl ${message.isUser
-            ? "bg-green-500 rounded-br-md"
-            : "bg-gray-100 rounded-bl-md"
-          }`}
-      >
-        {message.isLoading ? (
-          <View className="flex-row items-center">
-            <ActivityIndicator size="small" color="#666" />
-            <Text className="text-gray-600 ml-2">Thinking...</Text>
-          </View>
-        ) : (
-          <Text
-            className={`text-base leading-6 ${message.isUser ? "text-white" : "text-gray-800"
-              }`}
-          >
-            {message.text}
-          </Text>
-        )}
-      </View>
-      <Text className="text-xs text-gray-400 mt-1 px-2">
-        {message.timestamp.toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })}
-      </Text>
-    </View>
-  );
-};
 
 // Main Chat Component
 export default function Chat() {
