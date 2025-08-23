@@ -22,13 +22,13 @@ def get_db_connection():
         if not os.path.exists(DB_PATH):
             logger.error(f"Database file not found: {DB_PATH}")
             raise FileNotFoundError(f"Database file not found: {DB_PATH}")
-
+        
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
-
+        
         # Enable foreign key constraints
         conn.execute("PRAGMA foreign_keys = ON")
-
+        
         yield conn
     except sqlite3.Error as e:
         logger.error(f"Database error: {e}")
@@ -44,10 +44,8 @@ def get_db_connection():
         if conn:
             conn.close()
 
-
 def handle_database_errors(f):
     """Decorator to handle database errors gracefully"""
-
     @wraps(f)
     def decorated_function(*args, **kwargs):
         try:
@@ -61,8 +59,50 @@ def handle_database_errors(f):
         except Exception as e:
             logger.error(f"Unexpected error in {f.__name__}: {e}")
             return jsonify({"error": "Internal server error"}), 500
-
     return decorated_function
+
+
+
+# login ep
+@user_bp.route("/login", methods=["POST"])
+@handle_database_errors
+def login_user():
+    """Login user by user_id"""
+    data = request.get_json() or {}
+    user_id = data.get("user_id", "").strip()
+    
+    # Validate input
+    if not user_id or len(user_id) < 4:
+        return jsonify({"error": "User ID must be at least 4 characters"}), 400
+    
+    # Check format (must start with TEST)
+    if not user_id.startswith("TEST"):
+        return jsonify({"error": "User ID must start with TEST"}), 400
+    
+    try:
+        with get_db_connection() as conn:
+            user = conn.execute(
+                "SELECT * FROM user WHERE user_id = ?", 
+                (user_id,)
+            ).fetchone()
+            
+            if user:
+                user_data = dict(user)
+                logger.info(f"User {user_id} logged in successfully")
+                return jsonify({
+                    "success": True,
+                    "message": "Login successful",
+                    "user": user_data
+                }), 200
+            else:
+                logger.warning(f"Failed login attempt for user_id: {user_id}")
+                return jsonify({"error": "User not found"}), 404
+                
+    except Exception as e:
+        logger.error(f"Login error for {user_id}: {e}")
+        return jsonify({"error": "Internal server error"}), 500
+    
+
 
 
 def validate_user_id(user_id):
@@ -82,14 +122,12 @@ def get_user(user_id):
     if not validate_user_id(user_id):
         logger.warning(f"Invalid user ID requested: {user_id}")
         return jsonify({"error": "Invalid user ID"}), 400
-
+    
     try:
         with get_db_connection() as conn:
             # Use parameterized query (already good in original)
-            user = conn.execute(
-                "SELECT * FROM user WHERE id = ?", (user_id,)
-            ).fetchone()
-
+            user = conn.execute("SELECT * FROM user WHERE id = ?", (user_id,)).fetchone()
+            
             if user:
                 user_data = dict(user)
                 logger.info(f"Successfully retrieved user {user_id}")
