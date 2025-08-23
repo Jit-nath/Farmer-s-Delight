@@ -79,9 +79,9 @@ chain = (
     )
     | RunnableLambda(
         lambda x: {
-            "history": x["history"],
-            "context": x["context"],
-            "input": x["input"],
+            "history": x["history"], # type: ignore
+            "context": x["context"], # type: ignore
+            "input": x["input"], # type: ignore
         }
     )
     | rag
