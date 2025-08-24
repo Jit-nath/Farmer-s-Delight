@@ -19,8 +19,9 @@ interface Product {
   id: number;
   name: string;
   price: number;
-  image: string;
-  isNew?: boolean; // Optional property for new products
+  image_url: string;
+  isNew?: boolean
+  // Optional property for new products
 }
 
 const { width } = Dimensions.get("window");
@@ -39,11 +40,11 @@ const Marketplace = () => {
     try {
       setError(null);
       const response = await fetch(`${process.env.EXPO_PUBLIC_BASE_URL}/products`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       setProducts(data);
       setFilteredProducts(data);
@@ -113,14 +114,14 @@ const Marketplace = () => {
       >
         <View style={{ position: "relative" }}>
           <Image
-            source={{ uri: item.image }}
+            source={{ uri: item.image_url }}
             style={{
               width: "100%",
               height: 140,
               backgroundColor: "#f5f5f5"
             }}
             resizeMode="cover"
-            onError={() => console.log("Failed to load image:", item.image)}
+            onError={() => console.log("Failed to load image:", item.image_url)}
           />
           {item.isNew && (
             <View
@@ -155,10 +156,10 @@ const Marketplace = () => {
             {item.name}
           </Text>
 
-          <View style={{ 
-            flexDirection: "row", 
-            alignItems: "center", 
-            justifyContent: "space-between" 
+          <View style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between"
           }}>
             <Text
               style={{
@@ -167,7 +168,7 @@ const Marketplace = () => {
                 fontWeight: "800",
               }}
             >
-              ${item.price.toFixed(2)}
+              ₹{item.price.toFixed(2)}
             </Text>
 
             <View
@@ -314,17 +315,17 @@ const Marketplace = () => {
   ), [filteredProducts.length]);
 
   const ErrorComponent = () => (
-    <View style={{ 
-      flex: 1, 
-      justifyContent: "center", 
+    <View style={{
+      flex: 1,
+      justifyContent: "center",
       alignItems: "center",
-      padding: 20 
+      padding: 20
     }}>
-      <Text style={{ 
-        fontSize: 18, 
-        color: "#d32f2f", 
+      <Text style={{
+        fontSize: 18,
+        color: "#d32f2f",
         textAlign: "center",
-        marginBottom: 16 
+        marginBottom: 16
       }}>
         {error}
       </Text>

@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { 
-    View, 
-    Text, 
-    Image, 
-    StyleSheet, 
-    ActivityIndicator, 
+import {
+    View,
+    Text,
+    Image,
+    StyleSheet,
+    ActivityIndicator,
     ScrollView,
     Dimensions,
     TouchableOpacity,
-    SafeAreaView
+    SafeAreaView,
+    Pressable
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
+import { ExternalLink, Heart } from "lucide-react-native";
+import LikeButton from "@/components/LikeButton";
 
 const { width, height } = Dimensions.get('window');
 
@@ -23,13 +26,15 @@ interface Product {
     rating: number;
     reviews: number;
     sold: number;
-    image?: string; // Optional if you add images later
+    image_url?: string; // Optional if you add images later
 }
 
 export default function ProductPage() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const [product, setProduct] = useState<Product | null>(null);
     const [imageLoading, setImageLoading] = useState(true);
+
+    const [liked, setLiked] = useState(false);
 
     useEffect(() => {
         if (id) {
@@ -63,7 +68,7 @@ export default function ProductPage() {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <ScrollView 
+            <ScrollView
                 style={styles.container}
                 showsVerticalScrollIndicator={false}
                 bounces={true}
@@ -71,10 +76,10 @@ export default function ProductPage() {
                 {/* Hero Image Section */}
                 <View style={styles.heroSection}>
                     <View style={styles.imageWrapper}>
-                        <Image 
-                            source={{ 
-                                uri: product.image || 'https://via.placeholder.com/400x400?text=' + encodeURIComponent(product.name)
-                            }} 
+                        <Image
+                            source={{
+                                uri: product.image_url || 'https://via.placeholder.com/400x400?text=' + encodeURIComponent(product.name)
+                            }}
                             style={styles.productImage}
                             onLoadStart={() => setImageLoading(true)}
                             onLoadEnd={() => setImageLoading(false)}
@@ -85,13 +90,21 @@ export default function ProductPage() {
                                 <ActivityIndicator size="large" color="#10b981" />
                             </View>
                         )}
-                        
+
                         {/* Floating Elements */}
                         <View style={styles.floatingBadge}>
                             <Text style={styles.badgeText}>★ Premium</Text>
                         </View>
+                        <View className="absolute bottom-0 right-0 p-2" style={styles.secondaryActions}>
+                            <LikeButton wishListButton={styles.wishlistButton} />
+                            <Pressable style={styles.shareButton}>
+                                {({ pressed }) => (
+                                    <ExternalLink color={pressed ? "green" : "black"} size={32} />
+                                )}
+                            </Pressable>
+                        </View>
                     </View>
-                    
+
                     {/* Gradient Overlay */}
                     <View style={styles.gradientOverlay} />
                 </View>
@@ -104,19 +117,16 @@ export default function ProductPage() {
                             <Text style={styles.productTitle}>{product.name}</Text>
                             <View style={styles.titleAccent} />
                         </View>
-                        
+
                         {/* Price Display */}
                         <View style={styles.priceSection}>
                             <View style={styles.priceMainContainer}>
-                                <Text style={styles.currencySymbol}>$</Text>
+                                <Text style={styles.currencySymbol}>₹</Text>
                                 <Text style={styles.mainPrice}>
-                                    {Math.floor(product.price).toLocaleString()}
-                                </Text>
-                                <Text style={styles.priceCents}>
-                                    .{((product.price % 1) * 100).toFixed(0).padStart(2, '0')}
+                                    {Math.floor(product.price).toLocaleString()}.{((product.price % 1) * 100).toFixed(0).padStart(2, '0')}
                                 </Text>
                             </View>
-                            <View style={styles.priceBackground} />
+                            {/* <View style={styles.priceBackground} /> */}
                         </View>
                     </View>
 
@@ -141,12 +151,12 @@ export default function ProductPage() {
                     {/* Description Section - Now using real description from database */}
                     <View style={styles.descriptionContainer}>
                         <View style={styles.sectionHeader}>
-                            <View style={styles.sectionIcon}>
+                            {/* <View style={styles.sectionIcon}>
                                 <Text style={styles.iconText}>📝</Text>
-                            </View>
+                            </View> */}
                             <Text style={styles.sectionTitle}>Product Details</Text>
                         </View>
-                        
+
                         <View style={styles.descriptionContent}>
                             <Text style={styles.description}>
                                 {product.description}
@@ -161,15 +171,8 @@ export default function ProductPage() {
                                 <Text style={styles.addToCartText}>🛒 Add to Cart</Text>
                             </View>
                         </TouchableOpacity>
-                        
-                        <View style={styles.secondaryActions}>
-                            <TouchableOpacity style={styles.wishlistButton}>
-                                <Text style={styles.wishlistText}>♡</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.shareButton}>
-                                <Text style={styles.shareText}>↗</Text>
-                            </TouchableOpacity>
-                        </View>
+
+
                     </View>
                 </View>
             </ScrollView>
@@ -182,7 +185,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#fafbfc',
     },
-    
+
     // Loading Styles
     loadingContainer: {
         flex: 1,
@@ -210,12 +213,12 @@ const styles = StyleSheet.create({
         color: '#6b7280',
         fontWeight: '600',
     },
-    
+
     // Main Container
     container: {
         flex: 1,
     },
-    
+
     // Hero Section
     heroSection: {
         height: height * 0.5,
@@ -226,7 +229,7 @@ const styles = StyleSheet.create({
         flex: 1,
         marginHorizontal: 20,
         marginTop: 20,
-        borderRadius: 30,
+        // borderRadius: 30,
         overflow: 'hidden',
         backgroundColor: '#e5e7eb',
         shadowColor: '#000',
@@ -278,25 +281,27 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.1)',
         borderBottomLeftRadius: 30,
         borderBottomRightRadius: 30,
+        pointerEvents: "none",
     },
-    
+
     // Product Card
     productCard: {
         flex: 1,
+        width: '100%',
         backgroundColor: '#ffffff',
-        marginHorizontal: 20,
-        marginTop: -40,
-        borderRadius: 30,
+        // marginHorizontal: 20,
+        // marginTop: -40,
+        // borderRadius: 30,
         padding: 30,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.1,
-        shadowRadius: 20,
-        elevation: 10,
+        // shadowColor: '#000',
+        // shadowOffset: { width: 0, height: 10 },
+        // shadowOpacity: 0.1,
+        // shadowRadius: 20,
+        // elevation: 10,
         marginBottom: 30,
         zIndex: 1,
     },
-    
+
     // Product Header
     productHeader: {
         marginBottom: 30,
@@ -317,7 +322,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#2E7D32',
         borderRadius: 2,
     },
-    
+
     // Price Section
     priceSection: {
         position: 'relative',
@@ -333,14 +338,14 @@ const styles = StyleSheet.create({
     currencySymbol: {
         fontSize: 20,
         fontWeight: '600',
-        color: '#2E7D32',
+        // color: '#2E7D32',
         marginTop: 4,
         marginRight: 2,
     },
     mainPrice: {
-        fontSize: 36,
+        fontSize: 32,
         fontWeight: '900',
-        color: '#2E7D32',
+        // color: '#2E7D32',
     },
     priceCents: {
         fontSize: 20,
@@ -359,7 +364,7 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: '#bbf7d0',
     },
-    
+
     // Stats Container
     statsContainer: {
         flexDirection: 'row',
@@ -389,7 +394,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#e5e7eb',
         marginHorizontal: 10,
     },
-    
+
     // Description Section
     descriptionContainer: {
         marginBottom: 30,
@@ -428,7 +433,7 @@ const styles = StyleSheet.create({
         color: '#4b5563',
         lineHeight: 26,
     },
-    
+
     // Action Section
     actionSection: {
         flexDirection: 'row',
@@ -458,14 +463,14 @@ const styles = StyleSheet.create({
     secondaryActions: {
         flexDirection: 'row',
         gap: 8,
+        zIndex: 100,
     },
     wishlistButton: {
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: '#f8fafc',
-        borderWidth: 2,
-        borderColor: '#e5e7eb',
+        // borderColor: '#e5e7eb',
+        // backgroundColor: '#f8fafc',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -482,6 +487,7 @@ const styles = StyleSheet.create({
         borderColor: '#e5e7eb',
         justifyContent: 'center',
         alignItems: 'center',
+
     },
     shareText: {
         fontSize: 20,
