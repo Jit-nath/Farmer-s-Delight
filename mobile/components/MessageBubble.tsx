@@ -53,9 +53,12 @@ const parseMarkdown = (text: string, isUser: boolean) => {
             );
             if (inlineElements.length > 0) {
                 elements.push(
-                    <View key={getUniqueKey("paragraph")}>
+                    <Text
+                        key={getUniqueKey("paragraph")}
+                        className={`${textColor} mb-2 leading-6`}
+                    >
                         {inlineElements}
-                    </View>
+                    </Text>
                 );
             }
         }
