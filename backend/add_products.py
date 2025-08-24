@@ -8,7 +8,7 @@ def insert_farmer_products():
     products = [
         (
             "Tractor",
-            15000.00,
+            1199999.00,
             "Heavy-duty tractor for plowing and hauling",
             "https://picsum.photos/200/300",
             4.5,
@@ -17,7 +17,7 @@ def insert_farmer_products():
         ),
         (
             "Irrigation Pump",
-            450.00,
+            19999.00,
             "Electric water pump for field irrigation",
             "https://picsum.photos/200/300",
             4.2,
@@ -26,7 +26,7 @@ def insert_farmer_products():
         ),
         (
             "Fertilizer - Organic",
-            25.50,
+            249.50,
             "20kg organic fertilizer for crop growth",
             "https://picsum.photos/200/300",
             4.8,
@@ -35,7 +35,7 @@ def insert_farmer_products():
         ),
         (
             "Wheat Seeds",
-            12.00,
+            99.00,
             "High-yield wheat seeds, 10kg pack",
             "https://picsum.photos/200/300",
             4.6,
@@ -44,7 +44,7 @@ def insert_farmer_products():
         ),
         (
             "Pesticide Spray Kit",
-            85.00,
+            1759.00,
             "Handheld pesticide sprayer, 15L capacity",
             "https://picsum.photos/200/300",
             3.9,
@@ -53,7 +53,7 @@ def insert_farmer_products():
         ),
         (
             "Solar Water Pump",
-            1200.00,
+            96499.00,
             "Eco-friendly solar-powered water pump",
             "https://picsum.photos/200/300",
             4.7,
@@ -62,7 +62,7 @@ def insert_farmer_products():
         ),
         (
             "Harvesting Sickle",
-            7.50,
+            59.00,
             "Traditional sickle for manual harvesting",
             "https://picsum.photos/200/300",
             4.3,
@@ -71,7 +71,7 @@ def insert_farmer_products():
         ),
         (
             "Drip Irrigation Kit",
-            250.00,
+            1990.00,
             "Complete drip irrigation setup for 1 acre",
             "https://picsum.photos/200/300",
             4.4,
@@ -80,7 +80,7 @@ def insert_farmer_products():
         ),
         (
             "Cow Feed - Nutritional Mix",
-            30.00,
+            239.00,
             "Balanced diet mix for dairy cows, 25kg bag",
             "https://picsum.photos/200/300",
             4.6,
@@ -89,7 +89,7 @@ def insert_farmer_products():
         ),
         (
             "Greenhouse Film",
-            200.00,
+            1599.00,
             "UV-protected greenhouse covering film, 200 microns",
             "https://picsum.photos/200/300",
             4.1,
