@@ -108,7 +108,7 @@ export default function ProductPage() {
                         {/* Price Display */}
                         <View style={styles.priceSection}>
                             <View style={styles.priceMainContainer}>
-                                <Text style={styles.currencySymbol}>$</Text>
+                                <Text style={styles.currencySymbol}>₹</Text>
                                 <Text style={styles.mainPrice}>
                                     {Math.floor(product.price).toLocaleString()}
                                 </Text>
@@ -488,3 +488,4 @@ const styles = StyleSheet.create({
         color: '#6b7280',
     },
 });
+
