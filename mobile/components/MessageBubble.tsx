@@ -255,28 +255,35 @@ const parseBoldItalic = (
 // --- MESSAGE BUBBLE ---
 const MessageBubble = ({ message }: { message: Message }) => {
     return (
-        <View className={`mb-4 ${message.isUser ? "items-end" : "items-start"}`}>
-            <View
-                className={`max-w-[80%] px-4 py-3 rounded-2xl ${message.isUser
-                        ? "bg-green-500 rounded-br-md"
-                        : "bg-gray-100 rounded-bl-md"
-                    }`}
-            >
-                {message.isLoading ? (
-                    <View className="flex-row items-center">
-                        <ActivityIndicator size="small" color="#666" />
-                        <Text className="text-gray-600 ml-2">Thinking...</Text>
-                    </View>
-                ) : (
-                    <View>{parseMarkdown(message.text, message.isUser)}</View>
-                )}
-            </View>
-            <Text className="text-xs text-gray-400 mt-1 px-2">
-                {message.timestamp.toLocaleTimeString("en-US", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                })}
-            </Text>
+        <View className={`mb-4 px-2 ${message.isUser ? "items-end" : "items-start"}`}>
+                
+                    <View
+                    className={`max-w-[80%] shrink px-4 py-3 rounded-2xl ${message.isUser
+                            ? "bg-green-500 rounded-br-md"
+                            : "bg-gray-100 rounded-bl-md"
+                        }`}
+                >
+                    {message.isLoading ? (
+                        <View className="flex-row items-center">
+                            <ActivityIndicator size="small" color="#666" />
+                            <Text className="text-gray-600 ml-2">Thinking...</Text>
+                        </View>
+                    ) : (
+                        <View style={{ flexShrink: 1 }}>{parseMarkdown(message.text, message.isUser)}</View>
+                    )}
+                </View>
+                <View 
+                    className={`flex-row ${message.isUser ? "justify-end" : "justify-start"}`}
+                    style={{ paddingHorizontal: 8, marginTop: 4 }}
+                >
+                    <Text className="text-xs text-gray-400 mt-1 px-2">
+                        {message.timestamp.toLocaleTimeString("en-US", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                        })}
+                    </Text>
+                </View>
+            
         </View>
     );
 };
