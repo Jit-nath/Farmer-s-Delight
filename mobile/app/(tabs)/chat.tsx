@@ -259,24 +259,26 @@ export default function Chat() {
   return (
     <SafeAreaView className="flex-1 bg-white">
       <KeyboardAvoidingView
-        className="flex-1"
+        style={{ flex: 1 }} // Use style instead of className for flex
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0} // adjust for header height
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 20} // Increased offset
       >
         {/* Header */}
         <View className="bg-green-500 px-4 py-4 border-b border-green-600">
-          <View className="flex-row items-center justify-center">
-            <View
-              className={`w-3 h-3 rounded-full mr-2 ${connectionStatus === "connected"
-                  ? "bg-green-300"
-                  : connectionStatus === "connecting"
-                    ? "bg-yellow-300"
-                    : "bg-red-300"
-                }`}
-            />
-            <Text className="text-white text-lg font-bold">
-              🤖 AI Farming Assistant
-            </Text>
+          <View className="flex-row items-center justify-between"> {/* Changed to justify-between */}
+            <View className="flex-row items-center flex-1 justify-center">
+              <View
+                className={`w-3 h-3 rounded-full mr-2 ${connectionStatus === "connected"
+                    ? "bg-green-300"
+                    : connectionStatus === "connecting"
+                      ? "bg-yellow-300"
+                      : "bg-red-300"
+                  }`}
+              />
+              <Text className="text-white text-lg font-bold">
+                🤖 AI Farming Assistant
+              </Text>
+            </View>
             <TouchableOpacity onPress={handleLogout} className="p-2">
               <Ionicons name="log-out-outline" size={24} color="white" />
             </TouchableOpacity>
@@ -288,21 +290,24 @@ export default function Chat() {
           </Text>
         </View>
 
-        {/* Messages */}
-        <ScrollView
-          ref={scrollViewRef}
-          className="flex-1 px-4 py-4"
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {messages.map((message) => (
-            <MessageBubble key={message.id} message={message} />
-          ))}
-        </ScrollView>
+        {/* Messages Container */}
+        <View style={{ flex: 1 }}> {/* Wrap ScrollView in a View with flex: 1 */}
+          <ScrollView
+            ref={scrollViewRef}
+            className="flex-1 px-4 py-4"
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ flexGrow: 1 }} // Ensure proper scrolling
+          >
+            {messages.map((message) => (
+              <MessageBubble key={message.id} message={message} />
+            ))}
+          </ScrollView>
+        </View>
 
-        {/* Input Area */}
+        {/* Input Area - This will be pushed up by keyboard */}
         <View className="border-t border-gray-200 bg-white px-4 py-3">
-          <View className="flex-row items-center gap-2 space-x-3">
+          <View className="flex-row items-center space-x-3">
             <View className="flex-1 bg-gray-100 rounded-2xl px-4 py-3">
               <TextInput
                 value={inputText}
@@ -313,11 +318,12 @@ export default function Chat() {
                 maxLength={500}
                 className="text-gray-800 text-base max-h-24"
                 onSubmitEditing={handleSendMessage}
-                submitBehavior="blurAndSubmit"
+                returnKeyType="send" // Better for mobile
+                blurOnSubmit={false} // Keeps keyboard open for multiline
               />
             </View>
 
-            <View>
+            <View className="items-center">
               <TouchableOpacity
                 onPress={handleSendMessage}
                 disabled={
@@ -335,7 +341,7 @@ export default function Chat() {
                 )}
               </TouchableOpacity>
               {/* Character count */}
-              <Text className="text-xs text-gray-400 text-center">
+              <Text className="text-xs text-gray-400 text-center mt-1">
                 {inputText.length}/500
               </Text>
             </View>
@@ -343,5 +349,5 @@ export default function Chat() {
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
-  );
-}
+  )
+};

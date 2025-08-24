@@ -34,7 +34,7 @@ const parseMarkdown = (text: string, isUser: boolean) => {
                 <View
                     key={getUniqueKey("codeblock")}
                     className={`mt-2 mb-2 p-3 rounded-lg ${isUser ? "bg-green-600" : "bg-gray-200"
-                        } ${isMultiline ? "w-full" : "self-start"}`}   // <--- FIX
+                        } ${isMultiline ? "w-full" : "self-start"}`}
                 >
                     <Text className={`font-mono text-sm ${codeColor}`} selectable>
                         {part.trim()}
@@ -53,12 +53,9 @@ const parseMarkdown = (text: string, isUser: boolean) => {
             );
             if (inlineElements.length > 0) {
                 elements.push(
-                    <Text
-                        key={getUniqueKey("paragraph")}
-                        className={`${textColor} mb-2 leading-6`}
-                    >
+                    <View key={getUniqueKey("paragraph")}>
                         {inlineElements}
-                    </Text>
+                    </View>
                 );
             }
         }
@@ -80,8 +77,13 @@ const parseInlineMarkdown = (
     const lines = text.split("\n");
 
     lines.forEach((line, lineIndex) => {
+        // Add line breaks between lines
         if (lineIndex > 0) {
-            elements.push("\n"); // line break
+            elements.push(
+                <Text key={getUniqueKey("linebreak")} className={textColor}>
+                    {"\n"}
+                </Text>
+            );
         }
 
         // --- Lists ---
@@ -89,11 +91,13 @@ const parseInlineMarkdown = (
         if (listMatch) {
             const [, , content] = listMatch;
             elements.push(
-                <View key={getUniqueKey("list")} className="flex-row mt-1">
-                    <Text className={`${textColor} mr-2`}>•</Text>
-                    <Text className={`${textColor} flex-1`}>
-                        {parseLineContent(content, textColor, boldColor, codeColor, getUniqueKey)}
-                    </Text>
+                <View key={getUniqueKey("list")} className="flex-row">
+                    <Text className={`${textColor} mr-1`}>•</Text>
+                    <View className="flex-1">
+                        <Text className={textColor}>
+                            {parseLineContent(content, textColor, boldColor, codeColor, getUniqueKey)}
+                        </Text>
+                    </View>
                 </View>
             );
             return;
@@ -125,7 +129,7 @@ const parseInlineMarkdown = (
         // --- Regular line ---
         if (line.trim()) {
             elements.push(
-                <Text key={getUniqueKey("line")} className={textColor}>
+                <Text key={getUniqueKey("line")} className={`${textColor} mb-2 leading-6`}>
                     {parseLineContent(line, textColor, boldColor, codeColor, getUniqueKey)}
                 </Text>
             );
@@ -162,7 +166,8 @@ const parseLineContent = (
             elements.push(
                 <Text
                     key={getUniqueKey("inlinecode")}
-                    className={`font-mono text-sm px-1 py-0.5 rounded ${codeColor} bg-black/20`}
+                    className={`font-mono text-sm px-1 py-0.5 rounded ${codeColor}`}
+                    style={{ backgroundColor: 'rgba(0,0,0,0.1)' }}
                 >
                     {code}
                 </Text>
@@ -200,11 +205,7 @@ const parseBoldItalic = (
             const [, before, bold, after] = boldMatch;
 
             if (before) {
-                elements.push(
-                    <Text key={getUniqueKey("before-bold")} className={textColor}>
-                        {before}
-                    </Text>
-                );
+                elements.push(before);
             }
 
             elements.push(
@@ -223,11 +224,7 @@ const parseBoldItalic = (
             const [, before, italic, after] = italicMatch;
 
             if (before) {
-                elements.push(
-                    <Text key={getUniqueKey("before-italic")} className={textColor}>
-                        {before}
-                    </Text>
-                );
+                elements.push(before);
             }
 
             elements.push(
@@ -240,12 +237,8 @@ const parseBoldItalic = (
             continue;
         }
 
-        // --- Plain ---
-        elements.push(
-            <Text key={getUniqueKey("plain")} className={textColor}>
-                {remaining}
-            </Text>
-        );
+        // --- Plain text ---
+        elements.push(remaining);
         break;
     }
 
@@ -256,34 +249,34 @@ const parseBoldItalic = (
 const MessageBubble = ({ message }: { message: Message }) => {
     return (
         <View className={`mb-4 px-2 ${message.isUser ? "items-end" : "items-start"}`}>
-                
-                    <View
-                    className={`max-w-[80%] shrink px-4 py-3 rounded-2xl ${message.isUser
-                            ? "bg-green-500 rounded-br-md"
-                            : "bg-gray-100 rounded-bl-md"
-                        }`}
-                >
-                    {message.isLoading ? (
-                        <View className="flex-row items-center">
-                            <ActivityIndicator size="small" color="#666" />
-                            <Text className="text-gray-600 ml-2">Thinking...</Text>
-                        </View>
-                    ) : (
-                        <View style={{ flexShrink: 1 }}>{parseMarkdown(message.text, message.isUser)}</View>
-                    )}
-                </View>
-                <View 
-                    className={`flex-row ${message.isUser ? "justify-end" : "justify-start"}`}
-                    style={{ paddingHorizontal: 8, marginTop: 4 }}
-                >
-                    <Text className="text-xs text-gray-400 mt-1 px-2">
-                        {message.timestamp.toLocaleTimeString("en-US", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                        })}
-                    </Text>
-                </View>
-            
+            <View
+                className={`max-w-[80%] shrink px-4 py-3 rounded-2xl ${message.isUser
+                    ? "bg-green-500 rounded-br-md"
+                    : "bg-gray-100 rounded-bl-md"
+                    }`}
+            >
+                {message.isLoading ? (
+                    <View className="flex-row items-center">
+                        <ActivityIndicator size="small" color="#666" />
+                        <Text className="text-gray-600 ml-2">Thinking...</Text>
+                    </View>
+                ) : (
+                    <View style={{ flexShrink: 1 }}>
+                        {parseMarkdown(message.text, message.isUser)}
+                    </View>
+                )}
+            </View>
+            <View
+                className={`flex-row ${message.isUser ? "justify-end" : "justify-start"}`}
+                style={{ paddingHorizontal: 8, marginTop: 4 }}
+            >
+                <Text className="text-xs text-gray-400 mt-1 px-2">
+                    {message.timestamp.toLocaleTimeString("en-US", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                    })}
+                </Text>
+            </View>
         </View>
     );
 };
